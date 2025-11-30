@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Xthon — Leader Card Generator (v4.3)</title>
+  <style>
+    :root{--bg1:#171639;--bg2:#0b0a22;--acc1:#7b5cff;--acc2:#4da6ff;--ok:#22c55e;--err:#ef4444;--txt:#f8fafc;--muted:#cbd5e1;--border:#2b2a60}
+    *{box-sizing:border-box}
+    body{
+      margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,"Inter",sans-serif;color:var(--txt);
+      background:radial-gradient(900px 600px at 85% -10%,#6e38ff22,transparent 60%),radial-gradient(700px 500px at -10% 110%,#4da6ff22,transparent 60%),linear-gradient(135deg,var(--bg1),var(--bg2));
+      min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px
+    }
+    .container{width:100%;max-width:980px;background:linear-gradient(180deg,#14123a,#0b0a26);border:1px solid var(--border);border-radius:18px;box-shadow:0 28px 80px #0007;overflow:hidden}
+    header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{font-weight:800}.sub{color:#b9c2ea;font-size:.9rem}.tag{background:#1a1945;color:#c7c9ff;padding:6px 10px;border-radius:999px;font-size:.85rem;border:1px solid #3a3882}
+    .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;padding:22px}
+    @media (max-width:940px){.grid{grid-template-columns:1fr}}
+    .card{background:rgba(9,8,28,.72);border:1px solid var(--border);border-radius:14px;padding:18px}
+    .card h3{margin:0 0 14px 0;font-size:1.06rem}
+    label{display:block;font-size:.92rem;margin:10px 0 6px;color:#e5e7eb}
+    input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #343277;background:#0c0b23;color:#fff;outline:none}
+    input:focus{border-color:#7b5cff}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+    button{border:0;cursor:pointer;border-radius:10px;padding:12px 16px;font-weight:700;background:linear-gradient(135deg,var(--acc1),var(--acc2));color:#0a0a18;box-shadow:0 10px 28px #6e38ff33}
+    .ghost{background:#17163a;color:#e7e9ff;border:1px solid #2d2b62;font-weight:600}
+    .status{margin-top:12px;padding:12px;border-radius:10px;display:none}
+    .status.ok{display:block;background:#0d1f17;border:1px solid #1e8b56;color:#d1fae5}
+    .status.err{display:block;background:#271116;border:1px solid #963646;color:#ffe4e6}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .output{background:linear-gradient(180deg,#121129,#0b0a21);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:12px}
+    .kpi{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+    .chip{background:#16153a;border:1px solid #343277;padding:8px 10px;border-radius:999px;font-size:.85rem;color:#dbe1ff}
+    .copy-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .copy{flex:1;min-width:260px;padding:12px;border-radius:10px;border:1px dashed #3a3882;background:#0b0a21;color:#e6e8ff}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .leader-card{width:100%; max-width:520px; margin:12px auto 0; padding:18px;background:linear-gradient(180deg,#171639,#0f0e2c);border:1px solid var(--border); border-radius:16px; box-shadow:0 18px 48px #0005}
+    .lc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .lc-logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(145deg,#7b5cff,#4da6ff);display:grid;place-items:center;box-shadow:0 8px 30px #6e38ff40}
+    .lc-logo svg{width:22px;height:22px;fill:#0b0a1a}
+    .lc-brand{font-weight:800;letter-spacing:.2px}
+    .lc-code{font-weight:800;font-size:1.2rem;margin:8px 0 12px}
+    .lc-row{display:flex;gap:12px;flex-wrap:wrap}
+    .lc-field{flex:1;min-width:220px;background:#0e0d27;border:1px solid #2d2b62;border-radius:10px;padding:10px}
+    .lc-label{font-size:.78rem;color:#9aa3c7;margin-bottom:4px}
+    .lc-value{font-size:.98rem}
+    .lc-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all}
+    /* Print fixes: show card only, force black text */
+    @media print{
+      body{background:#fff !important; color:#000 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+      header, .grid .card:first-child, .controls, .copy-row, .kpi {display:none !important}
+      .print-area{display:block !important}
+      .leader-card{box-shadow:none;border:1px solid #000;background:#fff;color:#000}
+      .leader-card *{color:#000 !important}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <div class="brand">Xthon — Leader Card Generator</div>
+        <div class="sub">Please fill in accurate information.</div>
+      </div>
+      <div class="tag">Leader Card • v4.3</div>
+    </header>
+
+    <div class="grid">
+      <!-- Form -->
+      <div class="card">
+        <h3>Input</h3>
+        <div class="row">
+          <div>
+            <label for="firstName">First name</label>
+            <input id="firstName" type="text" placeholder="e.g., Kareem" autocomplete="off">
+          </div>
+          <div>
+            <label for="lastName">Last name</label>
+            <input id="lastName" type="text" placeholder="e.g., Abdelrahim" autocomplete="off">
+          </div>
+        </div>
+        <label for="bep20">USDT (BEP20) address</label>
+        <input id="bep20" class="mono" type="text" placeholder="0x + 40 hex chars" autocomplete="off">
+
+        <label for="binanceId">Binance ID</label>
+        <input id="binanceId" class="mono" type="text" placeholder="Digits only (6–16)" inputmode="numeric" autocomplete="off">
+
+        <div class="actions">
+          <button id="createBtn">Create card</button>
+          <button id="resetBtn" class="ghost" type="button">Reset</button>
+        </div>
+
+        <div id="status" class="status"></div>
+      </div>
+
+      <!-- Output -->
+      <div class="card">
+        <h3>Output</h3>
+        <div class="output">
+          <div class="kpi" id="kpi" style="display:none">
+            <span class="chip" id="chipNameEn"></span>
+            <span class="chip" id="chipCard"></span>
+          </div>
+
+          <!-- Printable area -->
+          <div class="print-area" style="display:none">
+            <div class="leader-card" id="leaderCard">
+              <div class="lc-head">
+                <div class="lc-logo" title="Xthon">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 5h4l3 4 3-4h4l-5.5 7L19 19h-4l-3-4-3 4H5l5.5-7L5 5z"/>
+                  </svg>
+                </div>
+                <div class="lc-brand">Xthon — Leader Card</div>
+              </div>
+              <div class="lc-code" id="lcCode">LC-—</div>
+              <div class="lc-row">
+                <div class="lc-field">
+                  <div class="lc-label">Full name (EN)</div>
+                  <div class="lc-value" id="lcNameEn">—</div>
+                </div>
+                <div class="lc-field">
+                  <div class="lc-label">USDT (BEP20)</div>
+                  <div class="lc-value lc-mono" id="lcBep20">—</div>
+                </div>
+              </div>
+              <div class="lc-row">
+                <div class="lc-field">
+                  <div class="lc-label">Binance ID</div>
+                  <div class="lc-value lc-mono" id="lcBinance">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="copy-row" id="copyRow" style="display:none">
+            <textarea id="copyText" class="copy" rows="8" readonly></textarea>
+          </div>
+
+          <div class="controls" id="controls" style="display:none">
+            <button id="btnCopy">Copy message</button>
+            <button id="btnPrint">Print card</button>
+            <button id="btnPdf" class="ghost">Save as PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const $ = (s)=>document.querySelector(s);
+  const firstName = $('#firstName');
+  const lastName  = $('#lastName');
+  const bep20     = $('#bep20');
+  const binanceId = $('#binanceId');
+  const statusBox = $('#status');
+  const createBtn = $('#createBtn');
+  const resetBtn  = $('#resetBtn');
+
+  const kpi       = $('#kpi');
+  const chipNameEn= $('#chipNameEn');
+  const chipCard  = $('#chipCard');
+
+  const printArea = document.querySelector('.print-area');
+  const lcCode    = $('#lcCode');
+  const lcNameEn  = $('#lcNameEn');
+  const lcBep20   = $('#lcBep20');
+  const lcBinance = $('#lcBinance');
+
+  const copyRow   = $('#copyRow');
+  const copyText  = $('#copyText');
+  const btnCopy   = $('#btnCopy');
+  const btnPrint  = $('#btnPrint');
+  const btnPdf    = $('#btnPdf');
+  const controls  = $('#controls');
+
+  // Digit normalization
+  const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
+  const persianIndic= '۰۱۲۳۴۵۶۷۸۹';
+  const toAsciiDigits = (s)=> String(s).split('').map(ch=>{
+    const ai = arabicIndic.indexOf(ch); if(ai !== -1) return String(ai);
+    const pi = persianIndic.indexOf(ch); if(pi !== -1) return String(pi);
+    return ch;
+  }).join('');
+  const onlyDigits = (s)=> toAsciiDigits(s).replace(/[^0-9]/g,'');
+  const cleanHex = (v)=> String(v).trim().replace(/\s+/g,'').toLowerCase();
+  const isBep20 = (v)=> /^0x[a-f0-9]{40}$/.test(cleanHex(v));
+
+  // Basic transliteration (Arabic -> Latin) kept internally; UI is English
+  const NAME_OVERRIDES = new Map([
+    ['محمد','Mohammed'],['أحمد','Ahmed'],['احمد','Ahmed'],['محمود','Mahmoud'],
+    ['عمر','Omar'],['على','Ali'],['علي','Ali'],['خالد','Khaled'],
+    ['عبدالرحيم','Abdelrahim'],['عبد الرحيم','Abdelrahim'],['عبدالرحمن','Abdelrahman'],['عبد الرحمن','Abdelrahman'],
+    ['مصطفى','Mostafa'],['مصطفي','Mostafa'],['يوسف','Yousef'],['يحيى','Yahya'],
+    ['كريم','Kareem'],['حسين','Hussein'],['نور','Nour'],['سعيد','Saeed'],['سلمان','Salman']
+  ]);
+  const map = {'ا':'a','أ':'a','إ':'i','آ':'a','ء':'','ؤ':'u','ئ':'i','ب':'b','ت':'t','ث':'th','ج':'j','ح':'h','خ':'kh','د':'d','ذ':'dh','ر':'r','ز':'z','س':'s','ش':'sh','ص':'s','ض':'d','ط':'t','ظ':'z','ع':'a','غ':'gh','ف':'f','ق':'q','ك':'k','ل':'l','م':'m','ن':'n','ه':'h','ة':'a','و':'w','ي':'y','ى':'a','ﻻ':'la','لا':'la'};
+  const stripMarks = (s)=> String(s).normalize('NFKD').replace(/[\u064B-\u0652\u0670\u0640]/g,'').replace(/\s+/g,' ').trim();
+  const translit = (str)=> String(str).split('').map(ch=> map[ch] ?? ch).join('').replace(/\s+/g,' ').trim();
+  const cap = (s)=> s ? s.charAt(0).toUpperCase()+s.slice(1) : s;
+  const toLatinName = (name)=>{
+    const clean = stripMarks(name);
+    const key = clean.toLowerCase();
+    if(NAME_OVERRIDES.has(key)) return NAME_OVERRIDES.get(key);
+    const t = translit(clean);
+    return cap(t);
+  };
+
+  const makeCardId = (fn, ln)=>{
+    const fnEnRaw = toLatinName(fn) || fn;
+    const lnEnRaw = toLatinName(ln) || ln;
+    const fnEn = cap(fnEnRaw);
+    const lInitial = (lnEnRaw.trim()[0]||'').toUpperCase();
+    const rnd = Math.floor(100000 + Math.random()*900000);
+    return { card:`LC-${fnEn} ${lInitial}-${rnd}`, fullNameEn:`${fnEn} ${lInitial}`.trim() };
+  };
+
+  const buildCopyMessage = ({fullNameEn, leaderCard, bep20, binanceId})=>[
+    "Leader Card — Confirmation",
+    "---------------------------",
+    `Full Name (EN): ${fullNameEn}`,
+    `Leader Card: \`${leaderCard}\``,
+    `USDT (BEP20): ${bep20}`,
+    `Binance ID: ${binanceId}`,
+    "",
+    "Note: The valid Leader Card is the value shown under the field named \"Leader Card\" above — tap it in Telegram to copy."
+  ].join("\n");
+
+  const clearOutput = ()=>{
+    statusBox.className = 'status';
+    statusBox.style.display = 'none';
+    kpi.style.display = 'none';
+    copyRow.style.display = 'none';
+    controls.style.display = 'none';
+    printArea.style.display = 'none';
+    copyText.value = '';
+  };
+
+  resetBtn.addEventListener('click', ()=>{
+    firstName.value = ''; lastName.value = ''; bep20.value = ''; binanceId.value = '';
+    clearOutput(); firstName.focus();
+  });
+
+  createBtn.addEventListener('click', ()=>{
+    clearOutput();
+    const fn = firstName.value.trim();
+    const ln = lastName.value.trim();
+    const b  = cleanHex(bep20.value);
+    const idDigits = onlyDigits(binanceId.value); // keep user input as-is
+
+    const missing = [];
+    if(!fn) missing.push('First name');
+    if(!ln) missing.push('Last name');
+    if(!b)  missing.push('USDT (BEP20) address');
+    if(!idDigits) missing.push('Binance ID');
+
+    const invalids = [];
+    if(b && !isBep20(b)) invalids.push('Invalid BEP20 address.');
+    if(idDigits && (idDigits.length < 6 || idDigits.length > 16)) invalids.push('Binance ID must be 6–16 digits.');
+
+    if(missing.length || invalids.length){
+      statusBox.className = 'status err';
+      statusBox.style.display = 'block';
+      statusBox.innerHTML = [
+        missing.length ? ('Missing: ' + missing.join(', ')) : '',
+        invalids.length ? ('Errors: ' + invalids.join(' ')) : ''
+      ].filter(Boolean).join(' — ');
+      return;
+    }
+
+    const {card, fullNameEn} = makeCardId(fn, ln);
+
+    // KPIs
+    kpi.style.display = 'flex';
+    chipNameEn.textContent = `Name: ${fullNameEn}`;
+    chipCard.textContent   = `Leader Card: ${card}`;
+
+    // Fill printable card
+    printArea.style.display = 'block';
+    lcCode.textContent   = card;
+    lcNameEn.textContent = fullNameEn;
+    lcBep20.textContent  = b;
+    lcBinance.textContent= idDigits;
+
+    // Copyable text (Leader Card wrapped in backticks)
+    copyRow.style.display = 'flex';
+    copyText.value = buildCopyMessage({ fullNameEn, leaderCard: card, bep20: b, binanceId: idDigits });
+
+    // Controls
+    controls.style.display = 'flex';
+
+    statusBox.className = 'status ok';
+    statusBox.style.display = 'block';
+    statusBox.textContent = 'Card generated.';
+  });
+
+  // Actions
+  btnCopy.addEventListener('click', async ()=>{
+    try{ await navigator.clipboard.writeText(copyText.value); btnCopy.textContent='Copied'; setTimeout(()=>btnCopy.textContent='Copy message',1100); }
+    catch{ btnCopy.textContent='Copy failed'; setTimeout(()=>btnCopy.textContent='Copy message',1100); }
+  });
+  const doPrint = ()=>{
+    // Ensure print area is visible
+    printArea.style.display = 'block';
+    window.print();
+  };
+  btnPrint.addEventListener('click', doPrint);
+  btnPdf.addEventListener('click', doPrint);
+})();
+</script>
+</body>
+</html>
